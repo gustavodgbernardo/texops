@@ -33,6 +33,15 @@ Click **Use this template** on GitHub, then clone your new repository.
 
 The first container build downloads TeX Live and takes a few minutes; later builds are cached.
 
+#### Using VS Code on the host (no Dev Container)
+
+If you open the project folder directly, the included `.vscode/settings.json` makes LaTeX Workshop build with `make editor-pdf`, which runs TeX inside Docker.
+The PDF opens in a VS Code tab and SyncTeX works, because the project is mounted at the same path inside the container.
+
+If the project lives inside a larger workspace folder (e.g. `~/repos` containing several projects), VS Code only reads the settings of the folder you opened.
+Copy the `latex-workshop.*` entries from [.vscode/settings.json](.vscode/settings.json) into that folder's `.vscode/settings.json`.
+Each section file starts with `% !TEX root = ../main.tex`, so building from any section compiles the whole paper.
+
 ### 3. Write through pull requests
 
 ```bash
@@ -81,7 +90,7 @@ The comment is updated on every push to the pull request.
 ## How the PDF preview works
 
 1. On every pull request, [`build.yml`](.github/workflows/build.yml) builds the Docker image (cached between runs), compiles `main.pdf` and runs `scripts/diff.sh` against the base branch.
-2. The PDFs are committed to the `pdf-builds` branch under `pr-<number>/`. GitHub renders PDF files stored in a repository, so the links open in the browser.
+2. The PDFs are committed to the `pdf-builds` branch under `pr-<number>/`.
 3. A bot comment on the pull request links to both files.
 4. When the pull request is closed, [`cleanup.yml`](.github/workflows/cleanup.yml) deletes its folder.
 5. Pushes to `main` publish the latest paper under `main/main.pdf`.
@@ -89,6 +98,19 @@ The comment is updated on every push to the pull request.
 PDFs are also attached to every workflow run as an artifact.
 
 **Pull requests from forks** receive a read-only token, so they only get the artifact (no `pdf-builds` publishing, no comment).
+
+### Enable GitHub Pages (one-time setup)
+
+GitHub's file view does not reliably render PDFs, so the links should point to GitHub Pages, which serves them as `application/pdf` and lets the browser open them.
+
+1. Merge a first pull request (or push to `main`) so the `pdf-builds` branch exists.
+2. Go to **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, branch `pdf-builds`, folder `/ (root)`.
+
+The workflow detects Pages automatically and uses `https://<owner>.github.io/<repo>/pr-<number>/…` links; without Pages it links to the file on the branch.
+
+> **Private repositories:** GitHub Pages sites are public (except on GitHub Enterprise Cloud), even when the repository is private.
+> Anyone with the link could open an unpublished paper.
+> For papers under review, either keep Pages disabled and use the workflow artifact, or accept that the PDF URLs are public but unlisted.
 
 ## Writing conventions
 
