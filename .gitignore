@@ -1,0 +1,24 @@
+# Build output
+build/
+paper/diff.tex
+
+# LaTeX auxiliary files (in case something is compiled outside build/)
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.bcf
+*.run.xml
+
+# Editors / OS
+.DS_Store
+*~

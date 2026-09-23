@@ -1,0 +1,16 @@
+{
+  "name": "texops",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "writer",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "James-Yu.latex-workshop",
+        "ltex-plus.vscode-ltex-plus"
+      ]
+    }
+  }
+}
