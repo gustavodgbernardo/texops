@@ -61,6 +61,7 @@ The comment is updated on every push to the pull request.
 |---|---|
 | [docs/vscode.md](docs/vscode.md) | Setting up VS Code (three setups), daily use, troubleshooting |
 | [docs/review-workflow.md](docs/review-workflow.md) | Authors and reviewers: pull requests, comments, suggestions, approval |
+| [docs/ai-editing.md](docs/ai-editing.md) | Editing with AI assistants locally: checkpoints, reviewing and keeping/discarding changes, then one PR |
 | [docs/writing-guidelines.md](docs/writing-guidelines.md) | LaTeX conventions: one sentence per line, sections, labels, figures |
 
 ## Commands
@@ -69,6 +70,7 @@ The comment is updated on every push to the pull request.
 |---|---|
 | `make pdf` | `build/main.pdf` |
 | `make diff BASE=origin/main` | `build/diff.pdf`, changes since `BASE` |
+| `make diff-local` | `build/diff.pdf`, your changes since the last commit (Docker if available); `BASE=origin/main` for the whole branch |
 | `make lint` | `chktex` warnings |
 | `make docker-pdf` / `make docker-diff` | Same, inside Docker |
 | `make clean` | Remove `build/` |
@@ -86,9 +88,10 @@ The comment is updated on every push to the pull request.
 ├── scripts/diff.sh           # builds diff.pdf with latexdiff
 ├── Dockerfile                # TeX environment shared by VS Code, make and CI
 ├── .devcontainer/            # VS Code Dev Container
-├── .vscode/settings.json     # LaTeX Workshop configuration
+├── .vscode/                  # LaTeX Workshop settings, diff PDF tasks
+├── AGENTS.md, CLAUDE.md      # editing rules for AI assistants
 ├── .github/workflows/        # CI: build, publish, comment, clean up
-└── docs/                     # vscode.md, review-workflow.md, writing-guidelines.md
+└── docs/                     # vscode.md, review-workflow.md, ai-editing.md, writing-guidelines.md
 ```
 
 ## How the PDF preview works

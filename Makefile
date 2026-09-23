@@ -1,6 +1,8 @@
 # Usage:
 #   make pdf                 Build build/main.pdf (needs a local TeX install or the Dev Container)
 #   make diff BASE=main      Build build/diff.pdf highlighting changes since BASE
+#   make diff-local          Build build/diff.pdf with your changes since the last commit
+#                            (including uncommitted ones); BASE=main compares with main
 #   make lint                Run chktex on the sources
 #   make docker-pdf          Same as `make pdf`, but inside Docker (nothing else to install)
 #   make docker-diff         Same as `make diff`, but inside Docker
@@ -15,7 +17,7 @@ IMAGE     := texops:local
 
 LATEXMK := latexmk -outdir=../$(BUILD_DIR)
 
-.PHONY: pdf diff lint clean docker-image docker-pdf docker-diff editor-pdf
+.PHONY: pdf diff lint clean docker-image docker-pdf docker-diff editor-pdf diff-local
 
 pdf:
 	cd $(PAPER_DIR) && $(LATEXMK) $(MAIN).tex
@@ -45,3 +47,12 @@ docker-diff: docker-image
 
 editor-pdf:
 	@if command -v docker >/dev/null 2>&1; then $(MAKE) --no-print-directory docker-pdf; else $(MAKE) --no-print-directory pdf; fi
+
+# Local review: defaults to HEAD instead of origin/main, uses Docker when available.
+diff-local: LOCAL_BASE = $(if $(filter command line,$(origin BASE)),$(BASE),HEAD)
+diff-local:
+	@if command -v docker >/dev/null 2>&1; then \
+		$(MAKE) --no-print-directory docker-diff BASE=$(LOCAL_BASE); \
+	else \
+		$(MAKE) --no-print-directory diff BASE=$(LOCAL_BASE); \
+	fi
