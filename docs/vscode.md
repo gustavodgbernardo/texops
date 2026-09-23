@@ -116,6 +116,27 @@ VS Code itself runs inside the container, together with TeX and the extensions.
 | Diff PDF of the whole branch | **Tasks: Run Task** → **texops: diff PDF (since main)** |
 | Clean | Terminal: `make clean` |
 
+### Optional keyboard shortcuts
+
+VS Code only supports shortcuts per user, not per project.
+To add shortcuts for the source diff and the diff PDF, open `Ctrl+Shift+P` → **Preferences: Open Keyboard Shortcuts (JSON)** and add:
+
+```jsonc
+[
+  { "key": "ctrl+alt+g", "command": "git.openChange", "when": "editorLangId == latex" },
+  { "key": "ctrl+alt+d", "command": "workbench.action.tasks.runTask", "args": "texops: diff PDF (since last commit)", "when": "editorLangId == latex" },
+  { "key": "ctrl+alt+shift+d", "command": "workbench.action.tasks.runTask", "args": "texops: diff PDF (since main)", "when": "editorLangId == latex" }
+]
+```
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Alt+G` | Source diff of the current file against the last commit |
+| `Ctrl+Alt+D` | Diff PDF of your changes since the last commit |
+| `Ctrl+Alt+Shift+D` | Diff PDF of the whole branch against `origin/main` |
+
+They only apply while a `.tex` file is focused, so they don't override shortcuts elsewhere.
+
 Every section file begins with `% !TEX root = ../main.tex`, so saving a section builds the whole paper.
 Keep that line when you add sections.
 
