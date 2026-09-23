@@ -1,9 +1,28 @@
 {
-  "latex-workshop.latex.outDir": "%WORKSPACE_FOLDER%/build",
+  // `make editor-pdf` builds through Docker on the host (no TeX install needed)
+  // and with plain latexmk inside the Dev Container.
+  "latex-workshop.latex.tools": [
+    {
+      "name": "make-editor-pdf",
+      "command": "make",
+      "args": ["-C", "%DIR%/..", "editor-pdf"],
+      "env": {}
+    },
+    {
+      "name": "latexmk",
+      "command": "latexmk",
+      "args": ["-synctex=1", "-interaction=nonstopmode", "-file-line-error", "-pdf", "-outdir=%OUTDIR%", "%DOC%"],
+      "env": {}
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    { "name": "texops", "tools": ["make-editor-pdf"] },
+    { "name": "latexmk", "tools": ["latexmk"] }
+  ],
+  "latex-workshop.latex.recipe.default": "texops",
+  "latex-workshop.latex.outDir": "%DIR%/../build",
   "latex-workshop.latex.autoBuild.run": "onSave",
   "latex-workshop.view.pdf.viewer": "tab",
-  "latex-workshop.latex.recipe.default": "latexmk",
-  "latex-workshop.latex.clean.fileTypes": ["*.aux", "*.bbl", "*.blg", "*.fdb_latexmk", "*.fls", "*.log", "*.out", "*.synctex.gz", "*.toc"],
   "ltex.language": "en-US",
   "editor.wordWrap": "on",
   "files.exclude": {

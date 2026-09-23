@@ -33,6 +33,15 @@ Click **Use this template** on GitHub, then clone your new repository.
 
 The first container build downloads TeX Live and takes a few minutes; later builds are cached.
 
+#### Using VS Code on the host (no Dev Container)
+
+If you open the project folder directly, the included `.vscode/settings.json` makes LaTeX Workshop build with `make editor-pdf`, which runs TeX inside Docker.
+The PDF opens in a VS Code tab and SyncTeX works, because the project is mounted at the same path inside the container.
+
+If the project lives inside a larger workspace folder (e.g. `~/repos` containing several projects), VS Code only reads the settings of the folder you opened.
+Copy the `latex-workshop.*` entries from [.vscode/settings.json](.vscode/settings.json) into that folder's `.vscode/settings.json`.
+Each section file starts with `% !TEX root = ../main.tex`, so building from any section compiles the whole paper.
+
 ### 3. Write through pull requests
 
 ```bash
