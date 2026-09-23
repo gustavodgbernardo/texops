@@ -12,7 +12,7 @@ Reviewers don't need to clone anything or install anything: they open the pull r
 
 ```
 VS Code + LaTeX Workshop ──► git push ──► pull request ──► GitHub Actions (Docker)
-      (Dev Container)                                          ├─ main.pdf
+  (host or Dev Container)                                    ├─ main.pdf
                                                                └─ diff.pdf  (removed / added text marked)
                                                                     └─ links commented on the PR
 ```
@@ -21,26 +21,20 @@ VS Code + LaTeX Workshop ──► git push ──► pull request ──► Git
 
 ### 1. Create your paper repository
 
-Click **Use this template** on GitHub, then clone your new repository.
+Click **Use this template** on GitHub, clone your new repository, then enable GitHub Pages once (see [Enable GitHub Pages](#enable-github-pages-one-time-setup)).
 
-### 2. Choose how to build locally
+### 2. Set up your editor
 
 | Option | Requirements | How |
 |---|---|---|
-| **VS Code Dev Container** (recommended) | VS Code, Docker, the *Dev Containers* extension | Open the folder and choose **Reopen in Container**. Saving a `.tex` file rebuilds the PDF, shown in a VS Code tab. |
-| **Docker only** | Docker, make | `make docker-pdf` → `build/main.pdf` |
-| **Local TeX Live** | TeX Live, latexmk, latexdiff | `make pdf` |
+| **VS Code, project folder** (recommended) | VS Code, Docker, LaTeX Workshop | Open the project folder and save a `.tex` file; the PDF builds in Docker and opens in a VS Code tab. |
+| **VS Code, parent workspace folder** | Same | Copy the LaTeX Workshop settings once into the parent folder's `.vscode/settings.json`. |
+| **VS Code Dev Container** | VS Code, Docker, Dev Containers | **Reopen in Container**; VS Code runs inside the TeX image. |
+| **Terminal only** | Docker, make | `make docker-pdf` → `build/main.pdf` |
 
-The first container build downloads TeX Live and takes a few minutes; later builds are cached.
+👉 **Step-by-step instructions, shortcuts and troubleshooting: [docs/vscode.md](docs/vscode.md).**
 
-#### Using VS Code on the host (no Dev Container)
-
-If you open the project folder directly, the included `.vscode/settings.json` makes LaTeX Workshop build with `make editor-pdf`, which runs TeX inside Docker.
-The PDF opens in a VS Code tab and SyncTeX works, because the project is mounted at the same path inside the container.
-
-If the project lives inside a larger workspace folder (e.g. `~/repos` containing several projects), VS Code only reads the settings of the folder you opened.
-Copy the `latex-workshop.*` entries from [.vscode/settings.json](.vscode/settings.json) into that folder's `.vscode/settings.json`.
-Each section file starts with `% !TEX root = ../main.tex`, so building from any section compiles the whole paper.
+The first build downloads TeX Live and takes a few minutes; later builds take seconds.
 
 ### 3. Write through pull requests
 
@@ -58,6 +52,16 @@ Open a pull request. When the build finishes, a comment like this appears:
 > 🔴🔵 **Changes (diff.pdf)**
 
 The comment is updated on every push to the pull request.
+
+👉 **How to comment, suggest changes, resolve and approve: [docs/review-workflow.md](docs/review-workflow.md).**
+
+## Documentation
+
+| Guide | For |
+|---|---|
+| [docs/vscode.md](docs/vscode.md) | Setting up VS Code (three setups), daily use, troubleshooting |
+| [docs/review-workflow.md](docs/review-workflow.md) | Authors and reviewers: pull requests, comments, suggestions, approval |
+| [docs/writing-guidelines.md](docs/writing-guidelines.md) | LaTeX conventions: one sentence per line, sections, labels, figures |
 
 ## Commands
 
