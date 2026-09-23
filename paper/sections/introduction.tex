@@ -2,11 +2,35 @@
 \section{Introduction}
 \label{sec:introduction}
 
-Writing a paper with several co-authors often means exchanging files by e-mail, which makes it hard to track who changed what.
-texops treats the paper as source code: every change goes through a pull request, is built in a reproducible container and is reviewed as a PDF.
-The workflow builds on well-known tools such as \LaTeX{}~\cite{lamport1994latex} and latexdiff~\cite{latexdiff}.
+Scientific papers are rarely written by a single person.
+A typical manuscript goes through several rounds of drafting, internal review and revision before it is submitted, and often through more rounds after the reviewers' comments arrive.
+Each round involves co-authors, advisors or collaborators who need to read the current version, suggest changes and check that their suggestions were addressed.
 
-vamos fazer uma edição aqui para ver como fica. 
+In practice, this collaboration is often managed in an ad hoc way.
+Co-authors exchange files by e-mail, rename them with dates or initials, and merge contributions by hand.
+Comments are scattered across e-mail threads, annotated PDFs and messaging applications.
+As a result, it becomes hard to know which version is the latest, who changed what, and whether a given comment has already been handled.
+
+Online editors reduce some of these problems by keeping a single shared copy of the document.
+However, they usually record changes as a continuous history rather than as reviewable units, and they tie the writing process to a specific platform.
+Moreover, differences in compiler versions or installed packages between co-authors can still produce documents that look different on each machine.
+
+Software development faced similar problems long ago and addressed them with version control, code review and continuous integration.
+In that setting, every change is proposed as a pull request, discussed line by line, built automatically in a controlled environment and merged only after approval.
+These practices make the history of a project explicit and the review of each change systematic.
+
+texops applies the same practices to academic writing.
+The paper is kept as \LaTeX{} source code~\cite{lamport1994latex} in a Git repository, and every change goes through a pull request.
+A continuous integration pipeline compiles the paper inside a Docker image, so every author and reviewer obtains exactly the same PDF.
+For each pull request, the pipeline also produces a visual diff with latexdiff~\cite{latexdiff}, in which removed text is marked in red and added text in blue.
+Reviewers can therefore follow the evolution of the paper from their browser, without installing any software.
+
+The main contributions of this example paper are the following:
+\begin{itemize}
+  \item a reproducible writing environment, shared by the editor, local builds and continuous integration;
+  \item a review workflow in which every change is available both as a line diff of the source and as a visual diff of the PDF;
+  \item a set of writing conventions, such as one sentence per line, that keep changes small and easy to review.
+\end{itemize}
 
 The rest of this paper is organized as follows.
 Section~\ref{sec:method} describes the method, Section~\ref{sec:results} presents the results and Section~\ref{sec:conclusion} concludes.
