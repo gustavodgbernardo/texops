@@ -12,7 +12,7 @@ Reviewers don't need to clone anything or install anything: they open the pull r
 
 ```
 VS Code + LaTeX Workshop ──► git push ──► pull request ──► GitHub Actions (Docker)
-  (host or Dev Container)                                    ├─ main.pdf
+  (host or Dev Container)                                      ├─ main.pdf
                                                                └─ diff.pdf  (removed / added text marked)
                                                                     └─ links commented on the PR
 ```
