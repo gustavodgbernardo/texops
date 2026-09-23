@@ -13,6 +13,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  pages: read # to link PDFs through GitHub Pages when it is enabled
 
 concurrency:
   group: pdf-${{ github.event.pull_request.number || github.ref }}
@@ -85,7 +86,15 @@ jobs:
             const marker = '<!-- texops-pdf -->';
             const pr = context.payload.pull_request.number;
             const sha = context.payload.pull_request.head.sha.slice(0, 7);
-            const url = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${process.env.PUBLISH_BRANCH}/pr-${pr}`;
+            // Prefer GitHub Pages (served as application/pdf, opens in the browser);
+            // fall back to the file view on the branch if Pages is not enabled.
+            let url = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${process.env.PUBLISH_BRANCH}/pr-${pr}`;
+            try {
+              const { data: pages } = await github.rest.repos.getPages(context.repo);
+              url = `${pages.html_url.replace(/\/$/, '')}/pr-${pr}`;
+            } catch (e) {
+              core.info('GitHub Pages not enabled, linking to the branch instead.');
+            }
             const diff = process.env.DIFF_OK === 'true'
               ? `🔴🔵 [**Changes (diff.pdf)**](${url}/diff.pdf)`
               : '⚠️ Diff could not be built, see the workflow logs.';
@@ -96,7 +105,7 @@ jobs:
               `📄 [**Paper (main.pdf)**](${url}/main.pdf)`,
               diff,
               '',
-              `<sub>Built from ${sha} · [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})</sub>`,
+              `<sub>Built from ${sha} · [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) · links may take a minute to update</sub>`,
             ].join('\n');
 
             const comments = await github.paginate(github.rest.issues.listComments, {

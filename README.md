@@ -81,7 +81,7 @@ The comment is updated on every push to the pull request.
 ## How the PDF preview works
 
 1. On every pull request, [`build.yml`](.github/workflows/build.yml) builds the Docker image (cached between runs), compiles `main.pdf` and runs `scripts/diff.sh` against the base branch.
-2. The PDFs are committed to the `pdf-builds` branch under `pr-<number>/`. GitHub renders PDF files stored in a repository, so the links open in the browser.
+2. The PDFs are committed to the `pdf-builds` branch under `pr-<number>/`.
 3. A bot comment on the pull request links to both files.
 4. When the pull request is closed, [`cleanup.yml`](.github/workflows/cleanup.yml) deletes its folder.
 5. Pushes to `main` publish the latest paper under `main/main.pdf`.
@@ -89,6 +89,19 @@ The comment is updated on every push to the pull request.
 PDFs are also attached to every workflow run as an artifact.
 
 **Pull requests from forks** receive a read-only token, so they only get the artifact (no `pdf-builds` publishing, no comment).
+
+### Enable GitHub Pages (one-time setup)
+
+GitHub's file view does not reliably render PDFs, so the links should point to GitHub Pages, which serves them as `application/pdf` and lets the browser open them.
+
+1. Merge a first pull request (or push to `main`) so the `pdf-builds` branch exists.
+2. Go to **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, branch `pdf-builds`, folder `/ (root)`.
+
+The workflow detects Pages automatically and uses `https://<owner>.github.io/<repo>/pr-<number>/…` links; without Pages it links to the file on the branch.
+
+> **Private repositories:** GitHub Pages sites are public (except on GitHub Enterprise Cloud), even when the repository is private.
+> Anyone with the link could open an unpublished paper.
+> For papers under review, either keep Pages disabled and use the workflow artifact, or accept that the PDF URLs are public but unlisted.
 
 ## Writing conventions
 
