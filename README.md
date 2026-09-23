@@ -88,7 +88,7 @@ The comment is updated on every push to the pull request.
 ├── .devcontainer/            # VS Code Dev Container
 ├── .vscode/settings.json     # LaTeX Workshop configuration
 ├── .github/workflows/        # CI: build, publish, comment, clean up
-└── docs/writing-guidelines.md
+└── docs/                     # vscode.md, review-workflow.md, writing-guidelines.md
 ```
 
 ## How the PDF preview works
