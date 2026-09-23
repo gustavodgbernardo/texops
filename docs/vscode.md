@@ -86,7 +86,8 @@ Do this once:
 }
 ```
 
-3. Reload VS Code: `Ctrl+Shift+P` → **Developer: Reload Window**.
+3. To get the diff PDF tasks as well, copy [`.vscode/tasks.json`](../.vscode/tasks.json) to the parent folder (`~/repos/.vscode/tasks.json`). The tasks find the project from the open file, so they work for every texops project under the parent folder.
+4. Reload VS Code: `Ctrl+Shift+P` → **Developer: Reload Window**.
 
 The paths are relative to the edited paper (`%DIR%` is the folder of `main.tex`), so the same settings work for every texops project under the parent folder.
 For other LaTeX projects in the same parent folder that do not follow this layout, pick the **latexmk** recipe in the TeX side panel.
@@ -111,14 +112,15 @@ VS Code itself runs inside the container, together with TeX and the extensions.
 | PDF → source | `Ctrl+Click` on the PDF |
 | Source → PDF | `Ctrl+Alt+J` on a line of `.tex` |
 | See errors | **Problems** panel (`Ctrl+Shift+M`) or the LaTeX Workshop output |
-| Build the diff against `main` | Terminal: `make docker-diff BASE=origin/main` → `build/diff.pdf` |
+| Diff PDF of your uncommitted changes | `Ctrl+Shift+P` → **Tasks: Run Task** → **texops: diff PDF (since last commit)** |
+| Diff PDF of the whole branch | **Tasks: Run Task** → **texops: diff PDF (since main)** |
 | Clean | Terminal: `make clean` |
 
 Every section file begins with `% !TEX root = ../main.tex`, so saving a section builds the whole paper.
 Keep that line when you add sections.
 
 Git actions (branch, commit, push) can be done in the **Source Control** panel (`Ctrl+Shift+G`) or in the terminal.
-See [review-workflow.md](review-workflow.md) for the pull request flow.
+See [review-workflow.md](review-workflow.md) for the pull request flow and [ai-editing.md](ai-editing.md) for reviewing edits made by AI assistants.
 
 ## Troubleshooting
 

@@ -1,0 +1,22 @@
+{
+  // Run with Ctrl+Shift+P → "Tasks: Run Task", while a file of the paper is open.
+  // The project root is found from the open file, so these tasks also work when
+  // the project is inside a larger workspace folder.
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "texops: diff PDF (since last commit)",
+      "detail": "Your changes since the last commit, including uncommitted ones",
+      "type": "shell",
+      "command": "cd \"$(git -C '${fileDirname}' rev-parse --show-toplevel)\" && make diff-local && code -r build/diff.pdf",
+      "problemMatcher": []
+    },
+    {
+      "label": "texops: diff PDF (since main)",
+      "detail": "Everything this branch changes compared with origin/main",
+      "type": "shell",
+      "command": "cd \"$(git -C '${fileDirname}' rev-parse --show-toplevel)\" && git fetch -q origin main && make diff-local BASE=origin/main && code -r build/diff.pdf",
+      "problemMatcher": []
+    }
+  ]
+}
