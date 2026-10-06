@@ -23,6 +23,12 @@ env:
   PUBLISH_BRANCH: pdf-builds
   # PRs from forks get a read-only token, so they only get the workflow artifact.
   CAN_PUBLISH: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+  # Optional: publish to a separate public repository instead of this one
+  # (needed for private repositories on GitHub Free, where Pages is unavailable).
+  # See "Private repositories" in the README.
+  PREVIEW_REPO: ${{ vars.PREVIEW_REPO }}
+  PREVIEW_URL: ${{ vars.PREVIEW_URL }}
+  TARGET_DIR: ${{ vars.PREVIEW_REPO && format('{0}/', github.event.repository.name) || '' }}${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}
 
 jobs:
   build:
@@ -66,15 +72,27 @@ jobs:
           path: publish/
 
       - name: Publish to ${{ env.PUBLISH_BRANCH }}
-        if: env.CAN_PUBLISH == 'true'
+        if: env.CAN_PUBLISH == 'true' && env.PREVIEW_REPO == ''
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: ${{ env.PUBLISH_BRANCH }}
           publish_dir: ./publish
-          destination_dir: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}
+          destination_dir: ${{ env.TARGET_DIR }}
           keep_files: true
           commit_message: "Publish PDFs for ${{ github.sha }}"
+
+      - name: Publish to ${{ env.PREVIEW_REPO }}
+        if: env.CAN_PUBLISH == 'true' && env.PREVIEW_REPO != ''
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+          external_repository: ${{ env.PREVIEW_REPO }}
+          publish_branch: ${{ env.PUBLISH_BRANCH }}
+          publish_dir: ./publish
+          destination_dir: ${{ env.TARGET_DIR }}
+          keep_files: true
+          commit_message: "Publish ${{ github.event.repository.name }} PDFs"
 
       - name: Comment on PR
         if: github.event_name == 'pull_request' && env.CAN_PUBLISH == 'true'
@@ -89,7 +107,9 @@ jobs:
             // Prefer GitHub Pages (served as application/pdf, opens in the browser);
             // fall back to the file view on the branch if Pages is not enabled.
             let url = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${process.env.PUBLISH_BRANCH}/pr-${pr}`;
-            try {
+            if (process.env.PREVIEW_URL) {
+              url = `${process.env.PREVIEW_URL.replace(/\/$/, '')}/${process.env.TARGET_DIR}`;
+            } else try {
               const { data: pages } = await github.rest.repos.getPages(context.repo);
               url = `${pages.html_url.replace(/\/$/, '')}/pr-${pr}`;
             } catch (e) {
