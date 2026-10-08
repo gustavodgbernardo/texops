@@ -79,7 +79,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          TITLE: ${{ github.event_name == 'pull_request' && format('Preview: PR #{0}', github.event.pull_request.number) || 'Preview: main' }}
+          TITLE: "${{ github.event_name == 'pull_request' && format('Preview: PR #{0}', github.event.pull_request.number) || 'Preview: main' }}"
         run: |
           tag="preview-$TARGET"
           # Recreate the release so its tag follows the latest commit; the
