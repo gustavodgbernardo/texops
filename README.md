@@ -115,9 +115,33 @@ GitHub's file view does not reliably render PDFs, so the links should point to G
 
 The workflow detects Pages automatically and uses `https://<owner>.github.io/<repo>/pr-<number>/…` links; without Pages it links to the file on the branch.
 
-> **Private repositories:** GitHub Pages sites are public (except on GitHub Enterprise Cloud), even when the repository is private.
-> Anyone with the link could open an unpublished paper.
-> For papers under review, either keep Pages disabled and use the workflow artifact, or accept that the PDF URLs are public but unlisted.
+### Private repositories
+
+GitHub Pages is not available for private repositories on GitHub Free, and on paid plans the Pages site is still public (except on GitHub Enterprise Cloud).
+Either way, anyone with a preview link can open the PDF, but the links only appear in your pull requests.
+
+To keep the paper's source private and still get browser previews, publish the PDFs to a separate **public** repository (one can serve all your papers):
+
+1. Create a public repository, e.g. `paper-previews`, with a README so it is not empty.
+2. Create a deploy key and register it:
+
+   ```bash
+   ssh-keygen -t ed25519 -N "" -C "previews" -f previews_key
+   gh repo deploy-key add previews_key.pub --repo <owner>/paper-previews --allow-write --title "<paper-repo>"
+   gh secret set PREVIEW_DEPLOY_KEY --repo <owner>/<paper-repo> < previews_key
+   rm previews_key previews_key.pub
+   ```
+
+3. Set the repository variables of the paper repository:
+
+   ```bash
+   gh variable set PREVIEW_REPO --repo <owner>/<paper-repo> --body "<owner>/paper-previews"
+   gh variable set PREVIEW_URL  --repo <owner>/<paper-repo> --body "https://<owner>.github.io/paper-previews"
+   ```
+
+4. After the first build, enable Pages in `paper-previews` (branch `pdf-builds`, folder `/ (root)`).
+
+PDFs are then published under `paper-previews/<paper-repo>/pr-<number>/` and removed when the pull request is closed.
 
 ## Writing conventions
 
