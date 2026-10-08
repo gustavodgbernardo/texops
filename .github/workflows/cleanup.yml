@@ -1,5 +1,5 @@
-# Removes a PR's PDFs from the `pdf-builds` branch once the PR is closed
-# (in this repository, or in the preview repository when PREVIEW_REPO is set).
+# Removes a PR's PDFs once the PR is closed: its pre-release (release mode)
+# and its folder in the `pdf-builds` branch (pages mode).
 name: Clean up PR PDFs
 
 on:
@@ -10,26 +10,39 @@ permissions:
   contents: write
 
 env:
-  PREVIEW_REPO: ${{ vars.PREVIEW_REPO }}
+  PR_DIR: pr-${{ github.event.pull_request.number }}
 
 jobs:
   cleanup:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
+      - name: Delete release preview-${{ env.PR_DIR }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release delete "preview-$PR_DIR" --cleanup-tag --yes 2>/dev/null || echo "no release to delete"
+
+      - name: Check for pdf-builds branch
+        id: branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh api "repos/${{ github.repository }}/branches/pdf-builds" --silent 2>/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v7
+        if: steps.branch.outputs.exists == 'true'
         with:
-          repository: ${{ env.PREVIEW_REPO || github.repository }}
-          ssh-key: ${{ env.PREVIEW_REPO && secrets.PREVIEW_DEPLOY_KEY || '' }}
           ref: pdf-builds
 
-      - name: Remove the PR folder
-        env:
-          DIR: ${{ env.PREVIEW_REPO && format('{0}/', github.event.repository.name) || '' }}pr-${{ github.event.pull_request.number }}
+      - name: Remove ${{ env.PR_DIR }}/ from pdf-builds
+        if: steps.branch.outputs.exists == 'true'
         run: |
-          [ -d "$DIR" ] || { echo "nothing to clean"; exit 0; }
+          [ -d "$PR_DIR" ] || { echo "nothing to clean"; exit 0; }
           git config user.name "github-actions[bot]"
           git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
-          git rm -r --quiet "$DIR"
-          git commit -m "Remove PDFs of closed PR ${{ github.repository }}#${{ github.event.pull_request.number }}"
+          git rm -r --quiet "$PR_DIR"
+          git commit -m "Remove PDFs of closed PR #${{ github.event.pull_request.number }}"
           git push

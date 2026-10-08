@@ -6,9 +6,9 @@ texops is a template for writing papers (or theses, reports, …) the way softwa
 
 - **Edit** in VS Code with a live PDF preview.
 - **Build** inside a Docker image, so every co-author gets the same PDF without installing LaTeX.
-- **Review** through pull requests: CI compiles the paper and a [latexdiff](https://ctan.org/pkg/latexdiff) of the changes, and posts links that open both PDFs directly in the browser.
+- **Review** through pull requests: CI compiles the paper and a [latexdiff](https://ctan.org/pkg/latexdiff) of the changes, and comments links to both PDFs on the pull request (in the browser for public repositories, as a direct download restricted to collaborators for private ones).
 
-Reviewers don't need to clone anything or install anything: they open the pull request and click the links.
+Reviewers don't need to clone or install anything: they open the pull request and click the links.
 
 ```
 VS Code + LaTeX Workshop ──► git push ──► pull request ──► GitHub Actions (Docker)
@@ -21,7 +21,7 @@ VS Code + LaTeX Workshop ──► git push ──► pull request ──► Git
 
 ### 1. Create your paper repository
 
-Click **Use this template** on GitHub, clone your new repository, then enable GitHub Pages once (see [Enable GitHub Pages](#enable-github-pages-one-time-setup)).
+Click **Use this template** on GitHub and clone your new repository. For a public repository, also enable GitHub Pages once (see [Enable GitHub Pages](#enable-github-pages-pages-mode-only-one-time-setup)); private repositories need no setup.
 
 ### 2. Set up your editor
 
@@ -96,52 +96,37 @@ The comment is updated on every push to the pull request.
 
 ## How the PDF preview works
 
-1. On every pull request, [`build.yml`](.github/workflows/build.yml) builds the Docker image (cached between runs), compiles `main.pdf` and runs `scripts/diff.sh` against the base branch.
-2. The PDFs are committed to the `pdf-builds` branch under `pr-<number>/`.
-3. A bot comment on the pull request links to both files.
-4. When the pull request is closed, [`cleanup.yml`](.github/workflows/cleanup.yml) deletes its folder.
-5. Pushes to `main` publish the latest paper under `main/main.pdf`.
+On every pull request, [`build.yml`](.github/workflows/build.yml) builds the Docker image (cached between runs), compiles `main.pdf`, runs `scripts/diff.sh` against the base branch and comments on the PR with links to both PDFs.
+Where the PDFs are published depends on the repository's visibility:
 
+| | **Release mode** (default for private repositories) | **Pages mode** (default for public repositories) |
+|---|---|---|
+| Where | A pre-release per PR (`preview-pr-<number>`) with the PDFs attached; `preview-main` for the latest `main` | The `pdf-builds` branch, served by GitHub Pages |
+| Who can open them | Only people with access to the repository | Anyone with the link |
+| How they open | Direct download (no zip) | In the browser |
+| Git history | Unchanged (release assets are not part of the history) | One commit per build on `pdf-builds` |
+| Setup | None | Enable Pages once (below) |
+
+To force a mode, set the repository variable `PREVIEW_MODE` to `release` or `pages` (**Settings → Secrets and variables → Actions → Variables**).
+
+When the pull request is closed, [`cleanup.yml`](.github/workflows/cleanup.yml) deletes its release and its `pdf-builds` folder.
 PDFs are also attached to every workflow run as an artifact.
 
-**Pull requests from forks** receive a read-only token, so they only get the artifact (no `pdf-builds` publishing, no comment).
+**Pull requests from forks** receive a read-only token, so they only get the artifact (no publishing, no comment).
 
-### Enable GitHub Pages (one-time setup)
+### Private repositories and unpublished papers
 
-GitHub's file view does not reliably render PDFs, so the links should point to GitHub Pages, which serves them as `application/pdf` and lets the browser open them.
+Use release mode (the default): previews are visible only to collaborators, so an unpublished paper never becomes public.
+Avoid Pages for papers under review: Pages sites are public even for private repositories (except on GitHub Enterprise Cloud), and public PDFs can be indexed by search engines and plagiarism checkers.
+
+### Enable GitHub Pages (pages mode only, one-time setup)
+
+GitHub's file view does not reliably render PDFs, so links should point to GitHub Pages, which serves them as `application/pdf` and lets the browser open them.
 
 1. Merge a first pull request (or push to `main`) so the `pdf-builds` branch exists.
 2. Go to **Settings → Pages → Build and deployment**, choose **Deploy from a branch**, branch `pdf-builds`, folder `/ (root)`.
 
-The workflow detects Pages automatically and uses `https://<owner>.github.io/<repo>/pr-<number>/…` links; without Pages it links to the file on the branch.
-
-### Private repositories
-
-GitHub Pages is not available for private repositories on GitHub Free, and on paid plans the Pages site is still public (except on GitHub Enterprise Cloud).
-Either way, anyone with a preview link can open the PDF, but the links only appear in your pull requests.
-
-To keep the paper's source private and still get browser previews, publish the PDFs to a separate **public** repository (one can serve all your papers):
-
-1. Create a public repository, e.g. `paper-previews`, with a README so it is not empty.
-2. Create a deploy key and register it:
-
-   ```bash
-   ssh-keygen -t ed25519 -N "" -C "previews" -f previews_key
-   gh repo deploy-key add previews_key.pub --repo <owner>/paper-previews --allow-write --title "<paper-repo>"
-   gh secret set PREVIEW_DEPLOY_KEY --repo <owner>/<paper-repo> < previews_key
-   rm previews_key previews_key.pub
-   ```
-
-3. Set the repository variables of the paper repository:
-
-   ```bash
-   gh variable set PREVIEW_REPO --repo <owner>/<paper-repo> --body "<owner>/paper-previews"
-   gh variable set PREVIEW_URL  --repo <owner>/<paper-repo> --body "https://<owner>.github.io/paper-previews"
-   ```
-
-4. After the first build, enable Pages in `paper-previews` (branch `pdf-builds`, folder `/ (root)`).
-
-PDFs are then published under `paper-previews/<paper-repo>/pr-<number>/` and removed when the pull request is closed.
+The workflow detects Pages automatically; without Pages it links to the file on the branch.
 
 ## Writing conventions
 
