@@ -29,6 +29,13 @@ git archive "$BASE" "$PAPER_DIR" | tar -x -C "$OLD"
 latexdiff --flatten --type=UNDERLINE \
   "$OLD/$PAPER_DIR/$MAIN" "$PAPER_DIR/$MAIN" > "$PAPER_DIR/diff.tex"
 
+# latexdiff loads ulem with [normalem]; some classes (e.g. Wiley's USG.cls)
+# already load ulem, which causes an option clash. Pass the option before the
+# class instead and load ulem without options.
+sed -i 's/\\RequirePackage\[normalem\]{ulem}/\\RequirePackage{ulem}/' "$PAPER_DIR/diff.tex"
+{ printf '%s\n' '\PassOptionsToPackage{normalem}{ulem}'; cat "$PAPER_DIR/diff.tex"; } > "$PAPER_DIR/diff.tmp"
+mv "$PAPER_DIR/diff.tmp" "$PAPER_DIR/diff.tex"
+
 # Compile next to main.tex so figures and the bibliography resolve.
 cd "$PAPER_DIR"
 latexmk -outdir=../build diff.tex
