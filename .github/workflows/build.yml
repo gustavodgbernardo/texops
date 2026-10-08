@@ -1,8 +1,14 @@
-# Builds the paper in the project's Docker image.
-# - On pull requests: builds main.pdf and diff.pdf (changes vs. the base branch),
-#   publishes them to the `pdf-builds` branch under pr-<number>/ and comments
-#   on the PR with links that open the PDFs directly in the browser.
-# - On pushes to main: publishes main.pdf under main/.
+# Builds the paper in the project's Docker image and publishes the PDFs.
+# - On pull requests: builds main.pdf and diff.pdf (changes vs. the base branch)
+#   and comments on the PR with links to them.
+# - On pushes to main: publishes the latest main.pdf.
+#
+# Where the PDFs go depends on PREVIEW_MODE (repository variable):
+# - release (default for private repositories): attached to a pre-release per PR
+#   (`preview-pr-<number>`) and to `preview-main`. Only people with access to
+#   the repository can download them. Nothing is added to the git history.
+# - pages (default for public repositories): committed to the `pdf-builds`
+#   branch and opened in the browser through GitHub Pages (if enabled).
 name: Build PDF
 
 on:
@@ -20,15 +26,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  PREVIEW_MODE: ${{ vars.PREVIEW_MODE || (github.event.repository.private && 'release' || 'pages') }}
   PUBLISH_BRANCH: pdf-builds
+  TARGET: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}
   # PRs from forks get a read-only token, so they only get the workflow artifact.
   CAN_PUBLISH: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
-  # Optional: publish to a separate public repository instead of this one
-  # (needed for private repositories on GitHub Free, where Pages is unavailable).
-  # See "Private repositories" in the README.
-  PREVIEW_REPO: ${{ vars.PREVIEW_REPO }}
-  PREVIEW_URL: ${{ vars.PREVIEW_URL }}
-  TARGET_DIR: ${{ vars.PREVIEW_REPO && format('{0}/', github.event.repository.name) || '' }}${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'main' }}
 
 jobs:
   build:
@@ -71,28 +73,31 @@ jobs:
           name: pdf
           path: publish/
 
+      - name: Publish to release preview-${{ env.TARGET }}
+        if: env.CAN_PUBLISH == 'true' && env.PREVIEW_MODE == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          TITLE: "${{ github.event_name == 'pull_request' && format('Preview: PR #{0}', github.event.pull_request.number) || 'Preview: main' }}"
+        run: |
+          tag="preview-$TARGET"
+          # Recreate the release so its tag follows the latest commit; the
+          # download URLs (…/releases/download/<tag>/<file>) stay the same.
+          gh release delete "$tag" --cleanup-tag --yes 2>/dev/null || true
+          gh release create "$tag" publish/*.pdf --target "$SHA" --prerelease --latest=false \
+            --title "$TITLE" --notes "PDFs built by CI from ${SHA:0:7}. Updated on every push; deleted when the pull request is closed."
+
       - name: Publish to ${{ env.PUBLISH_BRANCH }}
-        if: env.CAN_PUBLISH == 'true' && env.PREVIEW_REPO == ''
+        if: env.CAN_PUBLISH == 'true' && env.PREVIEW_MODE == 'pages'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: ${{ env.PUBLISH_BRANCH }}
           publish_dir: ./publish
-          destination_dir: ${{ env.TARGET_DIR }}
+          destination_dir: ${{ env.TARGET }}
           keep_files: true
           commit_message: "Publish PDFs for ${{ github.sha }}"
-
-      - name: Publish to ${{ env.PREVIEW_REPO }}
-        if: env.CAN_PUBLISH == 'true' && env.PREVIEW_REPO != ''
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          deploy_key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
-          external_repository: ${{ env.PREVIEW_REPO }}
-          publish_branch: ${{ env.PUBLISH_BRANCH }}
-          publish_dir: ./publish
-          destination_dir: ${{ env.TARGET_DIR }}
-          keep_files: true
-          commit_message: "Publish ${{ github.event.repository.name }} PDFs"
 
       - name: Comment on PR
         if: github.event_name == 'pull_request' && env.CAN_PUBLISH == 'true'
@@ -104,16 +109,22 @@ jobs:
             const marker = '<!-- texops-pdf -->';
             const pr = context.payload.pull_request.number;
             const sha = context.payload.pull_request.head.sha.slice(0, 7);
-            // Prefer GitHub Pages (served as application/pdf, opens in the browser);
-            // fall back to the file view on the branch if Pages is not enabled.
-            let url = `https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${process.env.PUBLISH_BRANCH}/pr-${pr}`;
-            if (process.env.PREVIEW_URL) {
-              url = `${process.env.PREVIEW_URL.replace(/\/$/, '')}/${process.env.TARGET_DIR}`;
-            } else try {
-              const { data: pages } = await github.rest.repos.getPages(context.repo);
-              url = `${pages.html_url.replace(/\/$/, '')}/pr-${pr}`;
-            } catch (e) {
-              core.info('GitHub Pages not enabled, linking to the branch instead.');
+            const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+            let url, note;
+            if (process.env.PREVIEW_MODE === 'release') {
+              url = `${repoUrl}/releases/download/preview-pr-${pr}`;
+              note = 'Downloads require access to this repository.';
+            } else {
+              // Prefer GitHub Pages (served as application/pdf, opens in the browser);
+              // fall back to the file view on the branch if Pages is not enabled.
+              url = `${repoUrl}/blob/${process.env.PUBLISH_BRANCH}/pr-${pr}`;
+              note = 'Links may take a minute to update.';
+              try {
+                const { data: pages } = await github.rest.repos.getPages(context.repo);
+                url = `${pages.html_url.replace(/\/$/, '')}/pr-${pr}`;
+              } catch (e) {
+                core.info('GitHub Pages not enabled, linking to the branch instead.');
+              }
             }
             const diff = process.env.DIFF_OK === 'true'
               ? `🔴🔵 [**Changes (diff.pdf)**](${url}/diff.pdf)`
@@ -125,7 +136,7 @@ jobs:
               `📄 [**Paper (main.pdf)**](${url}/main.pdf)`,
               diff,
               '',
-              `<sub>Built from ${sha} · [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) · links may take a minute to update</sub>`,
+              `<sub>Built from ${sha} · [workflow run](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) · ${note}</sub>`,
             ].join('\n');
 
             const comments = await github.paginate(github.rest.issues.listComments, {
